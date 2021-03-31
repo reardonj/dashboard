@@ -1,0 +1,33 @@
+@media (prefers-color-scheme: dark) {
+  body { background-color: #293742;}
+}
+
+#layout-root {
+  display: flex;
+  flex-direction: column;
+  margin: 8px;
+}
+
+#layout-root > * + * {
+  margin: 8px 0px 0px 0px;
+}
+
+.report-line {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: baseline;
+}
+
+.report-line > :first-child {
+  margin: 0px 4px 0px 0px;
+}
+
+.report-line > .full-width {
+  flex-grow: 1;
+  align-self: stretch;
+}
+
+.report-line > * + * {
+  margin: 0px 0px 0px 8px;
+}
