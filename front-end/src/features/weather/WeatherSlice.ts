@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios';
 import { DateTime } from 'luxon';
+import { conditionForId } from './IconMappings';
 
 export interface CurrentConditions {
   time: DateTime;
   conditions: string;
+  icon: string | undefined;
   temperature: number;
   windChill?: number;
   humidex?: number;
@@ -74,7 +76,8 @@ function parseCurrentConditions(current: Element): CurrentConditions {
   return {
     time: parseDate(dateElement),
     conditions: parseStringElement(current, 'condition'),
-    temperature: parseNumberElement(current, 'temperature')
+    temperature: parseNumberElement(current, 'temperature'),
+    icon: conditionForId(parseNumberElement(current, 'iconCode'))
   };
 }
 

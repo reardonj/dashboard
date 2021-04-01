@@ -1,4 +1,5 @@
 import { Classes, H5 } from "@blueprintjs/core";
+import { DateTime } from "luxon";
 import React from "react";
 import { useAppSelector } from "../../model/Hooks"
 import { CurrentConditions } from "./WeatherSlice";
@@ -8,7 +9,14 @@ export const CurrentConditionsReport = () => {
 
   return (
     <div className="report-line">
-      <H5>Current Conditions</H5>
+      <div>
+        <H5>Current Weather</H5>
+        <div className={Classes.TEXT_MUTED}>
+          {conditions
+            ? <>as of {conditions.time.toLocal().toLocaleString(DateTime.TIME_24_SIMPLE)}</>
+            : <>unavailable</>}
+        </div>
+      </div>
       {renderConditions(conditions)}
     </div>
   )
@@ -21,6 +29,8 @@ function renderConditions(conditions: CurrentConditions | undefined) {
     return <>
       {renderTemperature(conditions.temperature, conditions.humidex, conditions.windChill)}
       <div>{conditions.conditions}</div>
+      <div className='spacer' />
+      <div className='weather-icon'><i className={'wi-fw ' + (conditions.icon || 'wi wi-na')} /></div>
     </>
   } else {
     return <div className={Classes.SKELETON + ' full-width'} />

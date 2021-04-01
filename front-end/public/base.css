@@ -12,15 +12,41 @@
   margin: 8px 0px 0px 0px;
 }
 
+.weather-icon {
+  text-align: center;
+  align-self: center;
+  font-size: 28px;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.card-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: -4px;
+}
+
+.card-grid * {
+  max-width: 400px;
+  margin: 4px 4px 4px 4px;
+  flex: 1 1 350px
+}
+
 .report-line {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
   align-items: baseline;
+  flex-wrap: nowrap;
 }
 
-.report-line > :first-child {
+.report-line h5 {
   margin: 0px 4px 0px 0px;
+  white-space: nowrap;
 }
 
 .report-line > .full-width {

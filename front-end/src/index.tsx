@@ -13,6 +13,7 @@ import "@blueprintjs/core/lib/css/blueprint.css";
 
 
 store.dispatch(fetchWeather())
+setInterval(() => store.dispatch(fetchWeather()), 1000 * 60 * 60)
 
 ReactDOM.render(
   <React.StrictMode>
