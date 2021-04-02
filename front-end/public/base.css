@@ -2,6 +2,10 @@
   body { background-color: #293742;}
 }
 
+.bp3-navbar-group > * + * {
+  margin-left: 8px;
+}
+
 #layout-root {
   display: flex;
   flex-direction: column;
@@ -30,7 +34,7 @@
   margin: -4px;
 }
 
-.card-grid * {
+.card-grid > * {
   max-width: 400px;
   margin: 4px 4px 4px 4px;
   flex: 1 1 350px

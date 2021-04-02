@@ -4,16 +4,16 @@ import { DateTime } from 'luxon';
 import { conditionForId } from './IconMappings';
 
 export interface CurrentConditions {
-  time: DateTime;
+  time: number;
   conditions: string;
   icon: string | undefined;
   temperature: number;
-  windChill?: number;
-  humidex?: number;
+  windChill: number | null;
+  humidex: number | null;
 }
 
 export interface WeatherReport {
-  time: DateTime
+  time: number
   current: CurrentConditions
 }
 
@@ -34,7 +34,7 @@ const initialState: WeatherState = { state: "fetched", data: null };
 function parseStringElement(element: Element, child: string): string;
 function parseStringElement(element: Element, child: string, optional?: boolean): string | null;
 function parseStringElement(element: Element, child: string, optional?: boolean) {
-  const text = element.getElementsByTagName(child)?.[0].textContent;
+  const text = element.getElementsByTagName(child)?.[0]?.textContent;
   if (!text && !optional) {
     throw new ParseError(`${element.tagName} missing element ${child}`);
   }
@@ -74,10 +74,12 @@ function parseCurrentConditions(current: Element): CurrentConditions {
   }
 
   return {
-    time: parseDate(dateElement),
+    time: parseDate(dateElement).toSeconds(),
     conditions: parseStringElement(current, 'condition'),
     temperature: parseNumberElement(current, 'temperature'),
-    icon: conditionForId(parseNumberElement(current, 'iconCode'))
+    icon: conditionForId(parseNumberElement(current, 'iconCode')),
+    windChill: parseNumberElement(current, 'windChill', true),
+    humidex: parseNumberElement(current, 'humidex', true)
   };
 }
 
@@ -95,7 +97,7 @@ function parseWeather(xml: Document): WeatherReport {
   const currentConditions = parseCurrentConditions(xml.getElementsByTagName('currentConditions')[0]);
 
   return {
-    time: time,
+    time: time.toSeconds(),
     current: currentConditions
   }
 }

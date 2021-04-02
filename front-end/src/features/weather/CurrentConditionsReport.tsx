@@ -13,7 +13,7 @@ export const CurrentConditionsReport = () => {
         <H5>Current Weather</H5>
         <div className={Classes.TEXT_MUTED}>
           {conditions
-            ? <>as of {conditions.time.toLocal().toLocaleString(DateTime.TIME_24_SIMPLE)}</>
+            ? <>as of {DateTime.fromSeconds(conditions.time).toLocal().toLocaleString(DateTime.TIME_24_SIMPLE)}</>
             : <>unavailable</>}
         </div>
       </div>
@@ -37,7 +37,7 @@ function renderConditions(conditions: CurrentConditions | undefined) {
   }
 }
 
-function renderTemperature(temp: number, humidex: number | undefined, windChill: number | undefined) {
+function renderTemperature(temp: number, humidex: number | null, windChill: number | null) {
   const modifiedTemp = humidex || windChill;
   if (modifiedTemp) {
     return <div>
