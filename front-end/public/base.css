@@ -19,7 +19,7 @@
 .weather-icon {
   text-align: center;
   align-self: center;
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .spacer {
@@ -32,6 +32,7 @@
   flex-wrap: wrap;
   justify-content: center;
   margin: -4px;
+  align-items: flex-start;
 }
 
 .card-grid > * {
@@ -40,24 +41,43 @@
   flex: 1 1 350px
 }
 
-.report-line {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: baseline;
-  flex-wrap: nowrap;
-}
-
-.report-line h5 {
-  margin: 0px 4px 0px 0px;
-  white-space: nowrap;
-}
-
-.report-line > .full-width {
+.full-width {
   flex-grow: 1;
   align-self: stretch;
 }
 
+.overflow-container {
+  min-width: 0;
+  flex-shrink: 3;
+}
+
+.report-line {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.card-grid h5 {
+  margin: 0px 4px 0px 0px;
+  white-space: nowrap;
+}
+
 .report-line > * + * {
   margin: 0px 0px 0px 8px;
+}
+
+.report-line h6 {
+  margin: 0px 4px 0px 0px;
+  white-space: nowrap;
+}
+
+.report-line > .temperature {
+  width: 3em;
+  text-align: right;
+}
+
+.report-line.forecast {
+  margin-top: 4px;
 }

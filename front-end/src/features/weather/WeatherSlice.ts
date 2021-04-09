@@ -3,18 +3,27 @@ import axios from 'axios';
 import { DateTime } from 'luxon';
 import { conditionForId } from './IconMappings';
 
-export interface CurrentConditions {
-  time: number;
+export interface ConditionReport {
   conditions: string;
   icon: string | undefined;
   temperature: number;
   windChill: number | null;
   humidex: number | null;
+
+}
+
+export interface CurrentConditions extends ConditionReport {
+  time: number;
+}
+
+export interface Forecast extends ConditionReport {
+  title: string;
 }
 
 export interface WeatherReport {
-  time: number
-  current: CurrentConditions
+  time: number;
+  current: CurrentConditions;
+  forecasts: Forecast[]
 }
 
 export interface WeatherState {
@@ -30,6 +39,23 @@ class ParseError extends Error {
 
 const initialState: WeatherState = { state: "fetched", data: null };
 
+function getChildElement(element: Element, child: string) {
+  const first = element.getElementsByTagName(child)?.[0];
+  if (!first) {
+    throw new ParseError(`${element.tagName} missing element ${child}`);
+  }
+
+  return first;
+}
+
+function parseChildAttribute(element: Element, child: string, attribute: string) {
+  const text = element.getElementsByTagName(child)?.[0]?.getAttribute(attribute);
+  if (!text) {
+    throw new ParseError(`${element.tagName} missing element ${child}`);
+  }
+
+  return text;
+}
 
 function parseStringElement(element: Element, child: string): string;
 function parseStringElement(element: Element, child: string, optional?: boolean): string | null;
@@ -67,6 +93,18 @@ function parseDate(dateTime: Element): DateTime {
     parseNumberElement(dateTime, 'minute'));
 }
 
+function parseForecast(forecast: Element): Forecast {
+  const abbreviated = getChildElement(forecast, 'abbreviatedForecast');
+  return {
+    title: parseChildAttribute(forecast, 'period', 'textForecastName'),
+    icon: conditionForId(parseNumberElement(abbreviated, 'iconCode')),
+    conditions: parseStringElement(abbreviated, 'textSummary'),
+    temperature: parseNumberElement(getChildElement(forecast, 'temperatures'), 'temperature'),
+    windChill: null,
+    humidex: null
+  }
+}
+
 function parseCurrentConditions(current: Element): CurrentConditions {
   var dateElement = Array.from(current.getElementsByTagName('dateTime')).find(x => x.getAttribute('zone') === 'UTC');
   if (!dateElement) {
@@ -83,6 +121,10 @@ function parseCurrentConditions(current: Element): CurrentConditions {
   };
 }
 
+function parseForecastGroup(forecasts: Element): Forecast[] {
+  return Array.from(forecasts.getElementsByTagName('forecast')).map(parseForecast);
+}
+
 function parseWeather(xml: Document): WeatherReport {
   const reportTimeNodes = xml.evaluate(
     "/siteData/dateTime[@name='xmlCreation' and @zone='UTC']",
@@ -92,13 +134,10 @@ function parseWeather(xml: Document): WeatherReport {
   if (!(reportTimeNodes.singleNodeValue instanceof Element)) {
     throw new ParseError("Missing creation time");
   }
-
-  const time = parseDate(reportTimeNodes.singleNodeValue);
-  const currentConditions = parseCurrentConditions(xml.getElementsByTagName('currentConditions')[0]);
-
   return {
-    time: time.toSeconds(),
-    current: currentConditions
+    time: parseDate(reportTimeNodes.singleNodeValue).toSeconds(),
+    current: parseCurrentConditions(xml.getElementsByTagName('currentConditions')[0]),
+    forecasts: parseForecastGroup(xml.getElementsByTagName('forecastGroup')[0])
   }
 }
 
