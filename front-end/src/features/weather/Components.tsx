@@ -1,10 +1,10 @@
 import { Card, Classes, Divider, H5, H6, Text } from "@blueprintjs/core";
 import { Tooltip2, Classes as ToolTipClasses } from "@blueprintjs/popover2";
-import { DateTime } from "luxon";
+import { DateTime, FixedOffsetZone } from "luxon";
 import React from "react";
 import { getSunrise, getSunset } from "sunrise-sunset-js";
 import { useAppSelector } from "../../model/Hooks";
-import { Forecast } from "./WeatherSlice";
+import { CurrentConditions, Forecast } from "./WeatherSlice";
 
 export function CurrentConditionsReport() {
   const conditions = useAppSelector(state => state.forecast.data?.current);
@@ -45,6 +45,17 @@ export function DailyForecasts() {
   </Card>
 }
 
+export function HourlyForecasts() {
+  const forecasts = useAppSelector(state => state.forecast.data?.hourlyForecasts);
+  const elements = forecasts?.map(renderHourlyForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
+  return <Card>
+    <H5>Hourly Forecast</H5>
+    <div className='daily-forecasts'>
+      {elements}
+    </div>
+  </Card>
+}
+
 function renderTemperature(temp: number, humidex: number | null, windChill: number | null) {
   const modifiedTemp = humidex || windChill;
   if (modifiedTemp) {
@@ -77,7 +88,21 @@ function renderForecast(forecast: Forecast) {
 }
 
 
-export default function AstronomicalReport() {
+function renderHourlyForecast(forecast: CurrentConditions) {
+  return <div className="report-line forecast">
+    <div className='time-title'>
+      <H6>{to24hTime(DateTime.fromSeconds(forecast.time, { zone: FixedOffsetZone.utcInstance }))}</H6>
+    </div>
+    <div><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></div>
+    <div className='temperature'>{`${(forecast.humidex || forecast.windChill || forecast.temperature).toFixed(0)}\u00b0C`}</div>
+    {(forecast.humidex || forecast.windChill)
+      ? <div className='temperature'>{`${forecast.temperature.toFixed(0)}\u00b0C`}</div>
+      : <></>
+    }
+  </div>
+}
+
+function AstronomicalReport() {
   const today = new Date();
   return <div className='report-line'>
     <H5>Sunrise/Sunset</H5>

@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios';
-import { DateTime } from 'luxon';
+import { DateTime, FixedOffsetZone } from 'luxon';
 import { conditionForId } from './IconMappings';
 
 export interface ConditionReport {
@@ -24,6 +24,7 @@ export interface WeatherReport {
   time: number;
   current: CurrentConditions;
   forecasts: Forecast[]
+  hourlyForecasts: CurrentConditions[]
 }
 
 export interface WeatherState {
@@ -144,6 +145,21 @@ function parseForecastGroup(forecasts: Element): Forecast[] {
   return Array.from(forecasts.getElementsByTagName('forecast')).map(parseForecast);
 }
 
+function parseHourlyForecastGroup(forecasts: Element): CurrentConditions[] {
+  return Array.from(forecasts.getElementsByTagName('hourlyForecast')).map(current => {
+    const dateString = parseAttribute(current, 'dateTimeUTC');
+    const date = DateTime.fromFormat(dateString, 'yyyyMMddHHmm', { zone: FixedOffsetZone.utcInstance });
+    return {
+      time: date.toSeconds(),
+      conditions: parseStringElement(getChild(current, 'condition')),
+      temperature: parseNumberElement(getChild(current, 'temperature')),
+      icon: conditionForId(parseNumberElement(getChild(current, 'iconCode'))),
+      windChill: parseNumberElement(getChild(current, 'windChill', true), true),
+      humidex: parseNumberElement(getChild(current, 'humidex', true), true)
+    };
+  });
+}
+
 function parseWeather(xml: Document): WeatherReport {
   const reportTimeNodes = xml.evaluate(
     "/siteData/dateTime[@name='xmlCreation' and @zone='UTC']",
@@ -156,7 +172,8 @@ function parseWeather(xml: Document): WeatherReport {
   return {
     time: parseDate(reportTimeNodes.singleNodeValue).toSeconds(),
     current: parseCurrentConditions(xml.getElementsByTagName('currentConditions')[0]),
-    forecasts: parseForecastGroup(xml.getElementsByTagName('forecastGroup')[0])
+    forecasts: parseForecastGroup(xml.getElementsByTagName('forecastGroup')[0]),
+    hourlyForecasts: parseHourlyForecastGroup(xml.getElementsByTagName('hourlyForecastGroup')[0])
   }
 }
 

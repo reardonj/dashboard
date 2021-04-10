@@ -2,7 +2,7 @@ import { Classes, Divider } from "@blueprintjs/core"
 import * as React from "react"
 import { useModeSelector } from "use-light-switch"
 import { Header } from "./components/Header";
-import { CurrentConditionsReport, DailyForecasts } from "./features/weather/Components";
+import { CurrentConditionsReport, DailyForecasts, HourlyForecasts } from "./features/weather/Components";
 
 export const App = () => {
   const mode = useModeSelector({ dark: Classes.DARK, light: "", unset: "" });
@@ -12,6 +12,7 @@ export const App = () => {
       <div>
         <div className='card-grid'>
           <CurrentConditionsReport />
+          <HourlyForecasts />
           <DailyForecasts />
         </div>
       </div>

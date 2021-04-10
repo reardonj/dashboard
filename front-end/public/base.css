@@ -59,6 +59,11 @@
   flex-wrap: nowrap;
 }
 
+.report-line .time-title {
+  width: 45px;
+  text-align: right;
+}
+
 .report-line + .report-line {
   margin-top: 20px;
 }
