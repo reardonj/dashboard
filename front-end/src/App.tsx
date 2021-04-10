@@ -1,4 +1,4 @@
-import { Card, Classes, Divider } from "@blueprintjs/core"
+import { Classes, Divider } from "@blueprintjs/core"
 import * as React from "react"
 import { useModeSelector } from "use-light-switch"
 import { Header } from "./components/Header";
@@ -11,9 +11,7 @@ export const App = () => {
       < Header />
       <div>
         <div className='card-grid'>
-          <Card>
-            <CurrentConditionsReport />
-          </Card>
+          <CurrentConditionsReport />
           <DailyForecasts />
         </div>
       </div>

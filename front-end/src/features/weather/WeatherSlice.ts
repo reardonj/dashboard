@@ -9,7 +9,6 @@ export interface ConditionReport {
   temperature: number;
   windChill: number | null;
   humidex: number | null;
-
 }
 
 export interface CurrentConditions extends ConditionReport {
@@ -18,6 +17,7 @@ export interface CurrentConditions extends ConditionReport {
 
 export interface Forecast extends ConditionReport {
   title: string;
+  fullReport: string
 }
 
 export interface WeatherReport {
@@ -39,46 +39,64 @@ class ParseError extends Error {
 
 const initialState: WeatherState = { state: "fetched", data: null };
 
-function getChildElement(element: Element, child: string) {
-  const first = element.getElementsByTagName(child)?.[0];
-  if (!first) {
+function getChild(element: Element, child: string | string[]): Element;
+function getChild(element: Element, child: string | string[], optional?: boolean): Element | null;
+function getChild(element: Element, child: string | string[], optional?: boolean) {
+  let curr: string;
+  let rest: string[]
+  if (typeof (child) === 'string') {
+    curr = child;
+    rest = [];
+  } else if (child.length === 0) {
+    return element;
+  } else {
+    curr = child[0];
+    rest = child.slice(1);
+  }
+
+  const first = element.getElementsByTagName(curr)?.[0];
+  if (!first && !optional) {
     throw new ParseError(`${element.tagName} missing element ${child}`);
   }
 
-  return first;
+  if (rest.length > 0) {
+    return getChild(first, rest, optional);
+  } else {
+    return first;
+  }
 }
 
-function parseChildAttribute(element: Element, child: string, attribute: string) {
-  const text = element.getElementsByTagName(child)?.[0]?.getAttribute(attribute);
+function parseAttribute(element: Element, attribute: string) {
+  const text = element.getAttribute(attribute);
   if (!text) {
-    throw new ParseError(`${element.tagName} missing element ${child}`);
+    throw new ParseError(`${element.tagName} missing attribute ${attribute}`);
   }
 
   return text;
 }
 
-function parseStringElement(element: Element, child: string): string;
-function parseStringElement(element: Element, child: string, optional?: boolean): string | null;
-function parseStringElement(element: Element, child: string, optional?: boolean) {
-  const text = element.getElementsByTagName(child)?.[0]?.textContent;
+function parseStringElement(element: Element): string;
+function parseStringElement(element: Element | null, optional?: boolean): string | null;
+function parseStringElement(element: Element | null, optional?: boolean) {
+  const text = element?.textContent;
   if (!text && !optional) {
-    throw new ParseError(`${element.tagName} missing element ${child}`);
+    throw new ParseError('Element or content was missing');
   }
 
   return text;
 }
 
-function parseNumberElement(element: Element, child: string): number;
-function parseNumberElement(element: Element, child: string, optional: boolean): number | null;
-function parseNumberElement(element: Element, child: string, optional?: boolean) {
-  const text = parseStringElement(element, child, optional);
+function parseNumberElement(element: Element): number;
+function parseNumberElement(element: Element | null, optional: boolean): number | null;
+function parseNumberElement(element: Element | null, optional?: boolean) {
+  const text = parseStringElement(element, optional);
   if (!text && optional) {
     return null;
   }
 
   const number = Number(text);
   if (isNaN(number)) {
-    throw new ParseError(`${element.tagName} with element ${child} does not contain a number`);
+    throw new ParseError(`${element!.tagName} does not contain a number`);
   }
 
   return number;
@@ -86,20 +104,21 @@ function parseNumberElement(element: Element, child: string, optional?: boolean)
 
 function parseDate(dateTime: Element): DateTime {
   return DateTime.utc(
-    parseNumberElement(dateTime, 'year'),
-    parseNumberElement(dateTime, 'month'),
-    parseNumberElement(dateTime, 'day'),
-    parseNumberElement(dateTime, 'hour'),
-    parseNumberElement(dateTime, 'minute'));
+    parseNumberElement(getChild(dateTime, 'year')),
+    parseNumberElement(getChild(dateTime, 'month')),
+    parseNumberElement(getChild(dateTime, 'day')),
+    parseNumberElement(getChild(dateTime, 'hour')),
+    parseNumberElement(getChild(dateTime, 'minute')));
 }
 
-function parseForecast(forecast: Element): Forecast {
-  const abbreviated = getChildElement(forecast, 'abbreviatedForecast');
+function parseForecast(forecast: Element) {
+  const abbreviated = getChild(forecast, 'abbreviatedForecast');
   return {
-    title: parseChildAttribute(forecast, 'period', 'textForecastName'),
-    icon: conditionForId(parseNumberElement(abbreviated, 'iconCode')),
-    conditions: parseStringElement(abbreviated, 'textSummary'),
-    temperature: parseNumberElement(getChildElement(forecast, 'temperatures'), 'temperature'),
+    title: parseAttribute(getChild(forecast, 'period'), 'textForecastName'),
+    icon: conditionForId(parseNumberElement(getChild(abbreviated, 'iconCode'))),
+    fullReport: parseStringElement(getChild(forecast, 'textSummary')),
+    conditions: parseStringElement(getChild(abbreviated, 'textSummary')),
+    temperature: parseNumberElement(getChild(forecast, ['temperatures', 'temperature'])),
     windChill: null,
     humidex: null
   }
@@ -113,11 +132,11 @@ function parseCurrentConditions(current: Element): CurrentConditions {
 
   return {
     time: parseDate(dateElement).toSeconds(),
-    conditions: parseStringElement(current, 'condition'),
-    temperature: parseNumberElement(current, 'temperature'),
-    icon: conditionForId(parseNumberElement(current, 'iconCode')),
-    windChill: parseNumberElement(current, 'windChill', true),
-    humidex: parseNumberElement(current, 'humidex', true)
+    conditions: parseStringElement(getChild(current, 'condition')),
+    temperature: parseNumberElement(getChild(current, 'temperature')),
+    icon: conditionForId(parseNumberElement(getChild(current, 'iconCode'))),
+    windChill: parseNumberElement(getChild(current, 'windChill', true), true),
+    humidex: parseNumberElement(getChild(current, 'humidex', true), true)
   };
 }
 

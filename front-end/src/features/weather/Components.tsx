@@ -1,24 +1,38 @@
 import { Card, Classes, Divider, H5, H6, Text } from "@blueprintjs/core";
+import { Tooltip2, Classes as ToolTipClasses } from "@blueprintjs/popover2";
 import { DateTime } from "luxon";
 import React from "react";
-import { useAppSelector } from "../../model/Hooks"
-import { ConditionReport, Forecast } from "./WeatherSlice";
+import { getSunrise, getSunset } from "sunrise-sunset-js";
+import { useAppSelector } from "../../model/Hooks";
+import { Forecast } from "./WeatherSlice";
 
 export function CurrentConditionsReport() {
   const conditions = useAppSelector(state => state.forecast.data?.current);
 
   return (
-    <div className="report-line">
-      <div>
-        <H5>Current Weather</H5>
-        <div className={Classes.TEXT_MUTED}>
-          {conditions
-            ? <>as of {DateTime.fromSeconds(conditions.time).toLocal().toLocaleString(DateTime.TIME_24_SIMPLE)}</>
-            : <>unavailable</>}
+    <Card>
+      <div className="report-line">
+        <div>
+          <H5>Current Weather
+          <span className={[Classes.TEXT_MUTED, Classes.TEXT_SMALL, Classes.UI_TEXT].join(' ')}>
+              {conditions
+                ? <> as of {DateTime.fromSeconds(conditions.time).toLocal().toLocaleString(DateTime.TIME_24_SIMPLE)}</>
+                : <> unavailable</>}
+            </span>
+          </H5>
+          <div className='overflow-container'><Text ellipsize={true}>{conditions?.conditions}</Text></div>
         </div>
+        {conditions
+          ? <>
+            <div className='spacer' />
+            {renderTemperature(conditions.temperature, conditions.humidex, conditions.windChill)}
+            <div className='weather-icon'><i className={'wi-fw ' + (conditions.icon || 'wi wi-na')} /></div>
+          </>
+          : <></>
+        }
       </div>
-      {renderConditions(conditions)}
-    </div>
+      <AstronomicalReport />
+    </Card>
   )
 }
 
@@ -29,19 +43,6 @@ export function DailyForecasts() {
     <H5>Forecast</H5>
     {elements}
   </Card>
-}
-
-function renderConditions(conditions: ConditionReport | undefined) {
-  if (conditions) {
-    return <>
-      <div className='spacer' />
-      <div className='overflow-container'><Text ellipsize={true}>{conditions.conditions}</Text></div>
-      {renderTemperature(conditions.temperature, conditions.humidex, conditions.windChill)}
-      <div className='weather-icon'><i className={'wi-fw ' + (conditions.icon || 'wi wi-na')} /></div>
-    </>
-  } else {
-    return <></>
-  }
 }
 
 function renderTemperature(temp: number, humidex: number | null, windChill: number | null) {
@@ -59,7 +60,9 @@ function renderForecast(forecast: Forecast) {
   const report = <div className="report-line forecast">
     <div>
       <H6>{forecast.title}</H6>
-      <Text ellipsize={true}>{forecast.conditions}</Text>
+      <Tooltip2 content={forecast.fullReport} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
+        <Text ellipsize={true}>{forecast.conditions}</Text>
+      </Tooltip2>
     </div>
     <div className='spacer' />
     {renderTemperature(forecast.temperature, forecast.humidex, forecast.windChill)}
@@ -71,4 +74,23 @@ function renderForecast(forecast: Forecast) {
   }
 
   return [report]
+}
+
+
+export default function AstronomicalReport() {
+  const today = new Date();
+  return <div className='report-line'>
+    <H5>Sunrise/Sunset</H5>
+    <div className='spacer' />
+    <div>
+      <i className={'wi wi-sunrise'} /> {to24hTime(DateTime.fromJSDate(getSunrise(45.33, -75.58, today)))}
+    </div>
+    <div>
+      <i className={'wi wi-sunset'} /> {to24hTime(DateTime.fromJSDate(getSunset(45.33, -75.58, today)))}
+    </div>
+  </div>
+}
+
+function to24hTime(time: DateTime) {
+  return time.toLocal().toLocaleString(DateTime.TIME_24_SIMPLE);
 }

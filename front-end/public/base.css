@@ -38,7 +38,7 @@
 .card-grid > * {
   max-width: 400px;
   margin: 4px 4px 4px 4px;
-  flex: 1 1 350px
+  flex: 1 1 320px;
 }
 
 .full-width {
@@ -59,6 +59,10 @@
   flex-wrap: nowrap;
 }
 
+.report-line + .report-line {
+  margin-top: 20px;
+}
+
 .card-grid h5 {
   margin: 0px 4px 0px 0px;
   white-space: nowrap;
@@ -69,13 +73,17 @@
 }
 
 .report-line h6 {
-  margin: 0px 4px 0px 0px;
+  margin: 0px 4px 2px 0px;
   white-space: nowrap;
 }
 
 .report-line > .temperature {
   width: 3em;
   text-align: right;
+}
+
+.report-line .as-of-time {
+  align-self: baseline;
 }
 
 .report-line.forecast {

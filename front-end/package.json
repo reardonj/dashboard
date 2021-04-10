@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@blueprintjs/core": "^3.42.0",
+    "@blueprintjs/popover2": "^0.4.0",
     "@reduxjs/toolkit": "^1.5.1",
     "@testing-library/jest-dom": "^5.9.0",
     "@testing-library/react": "^10.2.1",
@@ -21,6 +22,7 @@
     "react-icons": "^3.0.0",
     "react-redux": "^7.2.3",
     "react-scripts": "4.0.3",
+    "sunrise-sunset-js": "^2.2.1",
     "typescript": "^3.9.5",
     "use-light-switch": "^1.0.1",
     "web-vitals": "^0.2.2"
