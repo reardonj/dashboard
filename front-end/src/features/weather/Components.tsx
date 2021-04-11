@@ -68,7 +68,7 @@ function renderTemperature(temp: number, humidex: number | null, windChill: numb
 }
 
 function renderForecast(forecast: Forecast) {
-  const report = <div className="report-line forecast">
+  const report = <div className="report-line forecast" key={forecast.title}>
     <div>
       <H6>{forecast.title}</H6>
       <Tooltip2 content={forecast.fullReport} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
@@ -81,7 +81,7 @@ function renderForecast(forecast: Forecast) {
   </div>
 
   if (forecast.title.endsWith('night')) {
-    return [report, <Divider />]
+    return [report, <Divider key={forecast.title + "-divider"} />]
   }
 
   return [report]
@@ -89,7 +89,7 @@ function renderForecast(forecast: Forecast) {
 
 
 function renderHourlyForecast(forecast: CurrentConditions) {
-  return <div className="report-line forecast">
+  return <div className="report-line forecast" key={forecast.time}>
     <div className='time-title'>
       <H6>{to24hTime(DateTime.fromSeconds(forecast.time, { zone: FixedOffsetZone.utcInstance }))}</H6>
     </div>
