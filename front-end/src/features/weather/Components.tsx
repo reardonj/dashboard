@@ -1,10 +1,10 @@
-import { Card, Classes, Divider, H5, H6, Text } from "@blueprintjs/core";
+import { Card, Classes, Divider, H5, H6, Icon, Text } from "@blueprintjs/core";
 import { Tooltip2, Classes as ToolTipClasses } from "@blueprintjs/popover2";
 import { DateTime, FixedOffsetZone } from "luxon";
 import React from "react";
 import { getSunrise, getSunset } from "sunrise-sunset-js";
 import { useAppSelector } from "../../model/Hooks";
-import { CurrentConditions, Forecast } from "./WeatherSlice";
+import { Forecast, HourlyForecast } from "./WeatherSlice";
 
 export function CurrentConditionsReport() {
   const conditions = useAppSelector(state => state.forecast.data?.current);
@@ -38,7 +38,7 @@ export function CurrentConditionsReport() {
 
 export function DailyForecasts() {
   const forecasts = useAppSelector(state => state.forecast.data?.forecasts);
-  const elements = forecasts?.flatMap(renderForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
+  const elements = forecasts?.map(renderForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
   return <Card>
     <H5>Forecast</H5>
     {elements}
@@ -50,7 +50,7 @@ export function HourlyForecasts() {
   const elements = forecasts?.map(renderHourlyForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
   return <Card>
     <H5>Hourly Forecast</H5>
-    <div className='daily-forecasts'>
+    <div className='hourly-forecasts'>
       {elements}
     </div>
   </Card>
@@ -68,7 +68,9 @@ function renderTemperature(temp: number, humidex: number | null, windChill: numb
 }
 
 function renderForecast(forecast: Forecast) {
-  const report = <div className="report-line forecast" key={forecast.title}>
+  return <div
+    className={['report-line', 'forecast', forecast.title.endsWith('night') ? 'night' : 'day'].join(' ')}
+    key={forecast.title}>
     <div>
       <H6>{forecast.title}</H6>
       <Tooltip2 content={forecast.fullReport} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
@@ -79,27 +81,33 @@ function renderForecast(forecast: Forecast) {
     {renderTemperature(forecast.temperature, forecast.humidex, forecast.windChill)}
     <div className='weather-icon'><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></div>
   </div>
-
-  if (forecast.title.endsWith('night')) {
-    return [report, <Divider key={forecast.title + "-divider"} />]
-  }
-
-  return [report]
 }
 
 
-function renderHourlyForecast(forecast: CurrentConditions) {
-  return <div className="report-line forecast" key={forecast.time}>
+function renderHourlyForecast(forecast: HourlyForecast) {
+  const time = DateTime.fromSeconds(forecast.time, { zone: FixedOffsetZone.utcInstance }).toLocal();
+  const date = time.day === DateTime.now().day ? 'today' : 'tomorrow';
+  return <div className={['report-line', 'forecast', 'hourly', date].join(' ')} key={forecast.time}>
     <div className='time-title'>
-      <H6>{to24hTime(DateTime.fromSeconds(forecast.time, { zone: FixedOffsetZone.utcInstance }))}</H6>
+      <H6 className={warningClass(forecast)}>{to24hTime(time)}</H6>
     </div>
     <div><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></div>
-    <div className='temperature'>{`${(forecast.humidex || forecast.windChill || forecast.temperature).toFixed(0)}\u00b0C`}</div>
-    {(forecast.humidex || forecast.windChill)
-      ? <div className='temperature'>{`${forecast.temperature.toFixed(0)}\u00b0C`}</div>
-      : <></>
-    }
-  </div>
+    <div className='temperature'>{`${(forecast.humidex || forecast.windChill || forecast.temperature).toFixed(0)}\u00b0C`}
+      {(forecast.humidex || forecast.windChill)
+        ? <span className='temperature'>{`${forecast.temperature.toFixed(0)}\u00b0C`}</span>
+        : <></>
+      }
+    </div>
+    <div>
+      {forecast.pop > 0 ? forecast.pop.toLocaleString(undefined, { style: 'percent' }) : ''}
+    </div>
+    <Text ellipsize={true}>
+      <Tooltip2 content={forecast.conditions} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
+        {forecast.conditions}
+      </Tooltip2>
+    </Text>
+    <div className='spacer' />
+  </div >
 }
 
 function AstronomicalReport() {
@@ -118,4 +126,12 @@ function AstronomicalReport() {
 
 function to24hTime(time: DateTime) {
   return time.toLocal().toLocaleString(DateTime.TIME_24_SIMPLE);
+}
+
+function warningClass(forecast: HourlyForecast) {
+  if (forecast.pop >= 0.5) {
+    return 'warning'
+  }
+
+  return ''
 }

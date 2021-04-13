@@ -1,5 +1,9 @@
+@import "~@blueprintjs/core/lib/scss/variables";
+
 @media (prefers-color-scheme: dark) {
-  body { background-color: #293742;}
+  body { 
+    background-color: $pt-dark-app-background-color;
+  }
 }
 
 .bp3-navbar-group > * + * {
@@ -93,4 +97,21 @@
 
 .report-line.forecast {
   margin-top: 4px;
+
+  .hourly {
+    align-items: baseline;
+  }
+}
+
+.report-line.forecast.today + .report-line.forecast.tomorrow,
+.report-line.forecast.night + .report-line.forecast.day {
+  padding-top: 4px;
+  border-top: 1px solid $pt-divider-black;
+  @media (prefers-color-scheme: dark) {
+    border-color: $pt-dark-divider-black;
+  }
+}
+
+h6.warning {
+  color: $pt-intent-warning !important;
 }

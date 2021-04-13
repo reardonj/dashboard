@@ -15,6 +15,11 @@ export interface CurrentConditions extends ConditionReport {
   time: number;
 }
 
+export interface HourlyForecast extends ConditionReport {
+  time: number;
+  pop: number;
+}
+
 export interface Forecast extends ConditionReport {
   title: string;
   fullReport: string
@@ -24,7 +29,7 @@ export interface WeatherReport {
   time: number;
   current: CurrentConditions;
   forecasts: Forecast[]
-  hourlyForecasts: CurrentConditions[]
+  hourlyForecasts: HourlyForecast[]
 }
 
 export interface WeatherState {
@@ -145,7 +150,7 @@ function parseForecastGroup(forecasts: Element): Forecast[] {
   return Array.from(forecasts.getElementsByTagName('forecast')).map(parseForecast);
 }
 
-function parseHourlyForecastGroup(forecasts: Element): CurrentConditions[] {
+function parseHourlyForecastGroup(forecasts: Element): HourlyForecast[] {
   return Array.from(forecasts.getElementsByTagName('hourlyForecast')).map(current => {
     const dateString = parseAttribute(current, 'dateTimeUTC');
     const date = DateTime.fromFormat(dateString, 'yyyyMMddHHmm', { zone: FixedOffsetZone.utcInstance });
@@ -155,7 +160,8 @@ function parseHourlyForecastGroup(forecasts: Element): CurrentConditions[] {
       temperature: parseNumberElement(getChild(current, 'temperature')),
       icon: conditionForId(parseNumberElement(getChild(current, 'iconCode'))),
       windChill: parseNumberElement(getChild(current, 'windChill', true), true),
-      humidex: parseNumberElement(getChild(current, 'humidex', true), true)
+      humidex: parseNumberElement(getChild(current, 'humidex', true), true),
+      pop: (parseNumberElement(getChild(current, 'lop', true), true) || 0) / 100
     };
   });
 }

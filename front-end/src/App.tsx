@@ -4,6 +4,8 @@ import { useModeSelector } from "use-light-switch"
 import { Header } from "./components/Header";
 import { CurrentConditionsReport, DailyForecasts, HourlyForecasts } from "./features/weather/Components";
 
+import './App.scss';
+
 export const App = () => {
   const mode = useModeSelector({ dark: Classes.DARK, light: "", unset: "" });
   return (
