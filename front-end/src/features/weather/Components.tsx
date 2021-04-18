@@ -41,11 +41,7 @@ export function DailyForecasts() {
   const elements = forecasts?.map(renderForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
   return <Card>
     <H5>Forecast</H5>
-    <table>
-      <tbody>
-        {elements}
-      </tbody>
-    </table>
+    {elements}
   </Card>
 }
 
@@ -55,7 +51,11 @@ export function HourlyForecasts() {
   return <Card>
     <H5>Hourly Forecast</H5>
     <div className='hourly-forecasts'>
-      {elements}
+      <table>
+        <tbody>
+          {elements}
+        </tbody>
+      </table>
     </div>
   </Card>
 }
