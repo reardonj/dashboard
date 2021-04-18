@@ -55,7 +55,7 @@
   flex-shrink: 3;
 }
 
-.report-line {
+div.report-line {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -68,7 +68,7 @@
   text-align: right;
 }
 
-.report-line + .report-line {
+div.report-line + div.report-line {
   margin-top: 20px;
 }
 
@@ -86,7 +86,7 @@
   white-space: nowrap;
 }
 
-.report-line > .temperature {
+.report-line .temperature {
   width: 3em;
   text-align: right;
 }
@@ -101,6 +101,14 @@
   .hourly {
     align-items: baseline;
   }
+}
+
+tr.report-line.forecast > td {
+  padding-top: 4px;
+}
+
+tr.report-line > td + td {
+  padding-left: 8px;
 }
 
 .report-line.forecast.today + .report-line.forecast.tomorrow,

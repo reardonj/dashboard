@@ -41,7 +41,11 @@ export function DailyForecasts() {
   const elements = forecasts?.map(renderForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
   return <Card>
     <H5>Forecast</H5>
-    {elements}
+    <table>
+      <tbody>
+        {elements}
+      </tbody>
+    </table>
   </Card>
 }
 
@@ -87,27 +91,26 @@ function renderForecast(forecast: Forecast) {
 function renderHourlyForecast(forecast: HourlyForecast) {
   const time = DateTime.fromSeconds(forecast.time, { zone: FixedOffsetZone.utcInstance }).toLocal();
   const date = time.day === DateTime.now().day ? 'today' : 'tomorrow';
-  return <div className={['report-line', 'forecast', 'hourly', date].join(' ')} key={forecast.time}>
-    <div className='time-title'>
+  return <tr className={['report-line', 'forecast', 'hourly', date].join(' ')} key={forecast.time}>
+    <td className='time-title'>
       <H6 className={warningClass(forecast)}>{to24hTime(time)}</H6>
-    </div>
-    <div><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></div>
-    <div className='temperature'>{`${(forecast.humidex || forecast.windChill || forecast.temperature).toFixed(0)}\u00b0C`}
+    </td>
+    <td className='temperature'>{`${(forecast.humidex || forecast.windChill || forecast.temperature).toFixed(0)}\u00b0C`}
       {(forecast.humidex || forecast.windChill)
         ? <span className='temperature'>{`${forecast.temperature.toFixed(0)}\u00b0C`}</span>
         : <></>
       }
-    </div>
-    <div>
-      {forecast.pop > 0 ? forecast.pop.toLocaleString(undefined, { style: 'percent' }) : ''}
-    </div>
-    <Text ellipsize={true}>
-      <Tooltip2 content={forecast.conditions} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
-        {forecast.conditions}
-      </Tooltip2>
-    </Text>
-    <div className='spacer' />
-  </div >
+    </td>
+    <td><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></td>
+    <td>{forecast.pop > 0 ? forecast.pop.toLocaleString(undefined, { style: 'percent' }) : ''}</td>
+    <td>
+      {forecast.conditions.length > 23 ?
+        <Tooltip2 content={forecast.conditions} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
+          {forecast.conditions.slice(0, 20) + '…'}
+        </Tooltip2> :
+        forecast.conditions}
+    </td>
+  </tr >
 }
 
 function AstronomicalReport() {
