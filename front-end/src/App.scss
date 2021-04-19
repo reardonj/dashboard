@@ -26,6 +26,10 @@
   font-size: 24px;
 }
 
+table {
+  width: 100%;
+}
+
 .spacer {
   flex-grow: 1;
 }
@@ -111,7 +115,7 @@ tr.report-line > td + td {
   padding-left: 8px;
 }
 
-.report-line.forecast.today + .report-line.forecast.tomorrow,
+.report-line.forecast.today + .report-line.forecast.tomorrow > td,
 .report-line.forecast.night + .report-line.forecast.day {
   padding-top: 4px;
   border-top: 1px solid $pt-divider-black;

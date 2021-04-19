@@ -4,6 +4,7 @@ const idToCondition: Record<number, string> = {
   2: 'wi-day-cloudy', // partly cloudy
   3: 'wi-day-cloudy-high', // mostly cloudy
   4: 'wi-day-cloudy-high', // increasingly cloudy
+  5: 'wi-day-sunny-overcast', // clearing
   6: 'wi-day-showers', // light rain shower
   7: 'wi-day-rain-mix', // light rain shower and flurries
   8: 'wi-day-snow', // light flurries
@@ -29,6 +30,7 @@ const idToCondition: Record<number, string> = {
   32: 'wi-night-alt-cloudy', // cloudy
   33: 'wi-night-alt-cloudy-high', // mostly cloudy
   34: 'wi-night-alt-cloudy-high', // increasingly cloudy
+  35: 'wi-night-alt-partly-cloudy', // clearing
   36: 'wi-night-alt-showers', // rain showers
   37: 'wi-night-alt-rain-mix', // rain-snow mix
   38: 'wi-night-alt-snow', // light flurries
