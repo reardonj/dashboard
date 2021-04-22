@@ -65,7 +65,7 @@ function renderTemperature(temp: number, humidex: number | null, windChill: numb
   const actual = `${temp.toFixed(0)}\u00b0C`
   if (modifiedTemp) {
     let tempDetails = <>
-      Actual: {actual}
+      Actual: {actual}<br />
       {humidex && `Humidex: ${humidex.toFixed(0)}\u00b0C`}
       {windChill && `Windchill: ${windChill.toFixed(0)}\u00b0C`}
     </>
