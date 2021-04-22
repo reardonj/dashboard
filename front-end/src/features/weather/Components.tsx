@@ -1,4 +1,4 @@
-import { Card, Classes, Divider, H5, H6, Icon, Text } from "@blueprintjs/core";
+import { Card, Classes, H5, H6, Text } from "@blueprintjs/core";
 import { Tooltip2, Classes as ToolTipClasses } from "@blueprintjs/popover2";
 import { DateTime, FixedOffsetZone } from "luxon";
 import React from "react";
@@ -62,13 +62,20 @@ export function HourlyForecasts() {
 
 function renderTemperature(temp: number, humidex: number | null, windChill: number | null) {
   const modifiedTemp = humidex || windChill;
+  const actual = `${temp.toFixed(0)}\u00b0C`
   if (modifiedTemp) {
-    return <div className='temperature'>
-      {`${modifiedTemp.toFixed(0)}\u00b0C`} <span className={Classes.TEXT_MUTED}>{`(${temp.toFixed(0)}\u00b0C)`}</span>
-    </div>
-  } else {
-    return <div className='temperature'>{`${temp.toFixed(0)}\u00b0C`}</div>
+    let tempDetails = <>
+      Actual: {actual}
+      {humidex && `Humidex: ${humidex.toFixed(0)}\u00b0C`}
+      {windChill && `Windchill: ${windChill.toFixed(0)}\u00b0C`}
+    </>
+
+    return <Tooltip2 content={tempDetails} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
+      {`${modifiedTemp.toFixed(0)}\u00b0C`}
+    </Tooltip2>
   }
+  return `${temp.toFixed(0)}\u00b0C`
+
 }
 
 function renderForecast(forecast: Forecast) {
@@ -78,11 +85,13 @@ function renderForecast(forecast: Forecast) {
     <div>
       <H6>{forecast.title}</H6>
       <Tooltip2 content={forecast.fullReport} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
-        <Text ellipsize={true}>{forecast.conditions}</Text>
+        {forecast.conditions.length > 35 ? forecast.conditions.slice(0, 33) + '…' : forecast.conditions}
       </Tooltip2>
     </div>
     <div className='spacer' />
-    {renderTemperature(forecast.temperature, forecast.humidex, forecast.windChill)}
+    <div className='temperature'>
+      {renderTemperature(forecast.temperature, forecast.humidex, forecast.windChill)}
+    </div>
     <div className='weather-icon'><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></div>
   </div>
 }
@@ -104,9 +113,9 @@ function renderHourlyForecast(forecast: HourlyForecast) {
     <td><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></td>
     <td>{forecast.pop > 0 ? forecast.pop.toLocaleString(undefined, { style: 'percent' }) : ''}</td>
     <td>
-      {forecast.conditions.length > 23 ?
+      {forecast.conditions.length > 20 ?
         <Tooltip2 content={forecast.conditions} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
-          {forecast.conditions.slice(0, 20) + '…'}
+          {forecast.conditions.slice(0, 18) + '…'}
         </Tooltip2> :
         forecast.conditions}
     </td>
