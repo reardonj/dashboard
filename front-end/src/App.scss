@@ -6,6 +6,10 @@
   }
 }
 
+footer {
+  text-align: center;
+}
+
 .bp3-navbar-group > * + * {
   margin-left: 8px;
 }
@@ -49,7 +53,7 @@ table {
   flex: 1 1 350px;
 }
 
-@media only screen and (min-width: 724px) and (max-width: 1081px) {
+@media only screen and (min-width: 724px) {
   .card-grid {
     flex-direction: column;
     align-items: stretch;
@@ -57,8 +61,6 @@ table {
     justify-content: center;
     align-content: center;
   }
-  .card-grid > div:nth-child(2n+1) { order: 1; }
-  .card-grid > div:nth-child(2n+2) { order: 2; }
 
   .card-grid > div {
     max-width: 400px;

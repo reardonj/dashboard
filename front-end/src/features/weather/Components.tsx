@@ -47,15 +47,17 @@ export function DailyForecasts() {
 
 export function HourlyForecasts() {
   const forecasts = useAppSelector(state => state.forecast.data?.hourlyForecasts);
-  const elements = forecasts?.map(renderHourlyForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
   return <Card>
     <H5>Hourly Forecast</H5>
     <div className='hourly-forecasts'>
-      <table>
-        <tbody>
-          {elements}
-        </tbody>
-      </table>
+      {forecasts
+        ? <table cellSpacing={0}>
+          <tbody>
+            {forecasts.map(renderHourlyForecast)}
+          </tbody>
+        </table>
+        : <div className={Classes.TEXT_MUTED}>unavailable</div>
+      }
     </div>
   </Card>
 }
