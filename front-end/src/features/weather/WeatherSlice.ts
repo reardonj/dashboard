@@ -185,7 +185,10 @@ function parseWeather(xml: Document): WeatherReport {
 
 // Thunk functions
 export const fetchWeather = createAsyncThunk('weather/fetchWeather', async () => {
-  const response = await axios('https://dashboard-proxy.jmreardon.com/api/weather/citypage_weather/xml/ON/s0000430_e.xml');
+  const response = await axios(
+    process.env.NODE_ENV === 'production'
+      ? 'https://dashboard-proxy.jmreardon.com/api/weather/citypage_weather/xml/ON/s0000430_e.xml'
+      : '/api/weather/citypage_weather/xml/ON/s0000430_e.xml');
   const xml = new DOMParser().parseFromString(response.data, "text/xml");
   try {
     return parseWeather(xml);
