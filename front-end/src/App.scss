@@ -71,6 +71,12 @@ table {
   }
 }
 
+@media only screen and (min-width: 1084px) {
+  .card-grid {
+    max-height: 700px;
+  }
+}
+
 .full-width {
   flex-grow: 1;
   align-self: stretch;

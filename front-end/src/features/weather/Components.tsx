@@ -1,7 +1,7 @@
-import { Card, Classes, H5, H6, Text } from "@blueprintjs/core";
+import { Card, Classes, Drawer, H5, H6, Text } from "@blueprintjs/core";
 import { Tooltip2, Classes as ToolTipClasses } from "@blueprintjs/popover2";
 import { DateTime, FixedOffsetZone } from "luxon";
-import React from "react";
+import React, { useState } from "react";
 import { getSunrise, getSunset } from "sunrise-sunset-js";
 import { useAppSelector } from "../../model/Hooks";
 import { Forecast, HourlyForecast } from "./WeatherSlice";
@@ -62,6 +62,54 @@ export function HourlyForecasts() {
   </Card>
 }
 
+export function Warnings() {
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  return <> {
+    useAppSelector(state => state.forecast.data?.warnings ?? []).map(warning => {
+      const title = warning.type.length > 0 ? warning.type : 'Warning';
+      var intent;
+      switch (warning.priority) {
+        case "medium":
+          intent = Classes.INTENT_WARNING;
+          break;
+        case "high":
+          intent = Classes.INTENT_DANGER;
+          break;
+        case "urgent":
+          intent = Classes.INTENT_DANGER;
+          break;
+        default:
+          intent = Classes.INTENT_PRIMARY;
+          break;
+
+      }
+      return <>
+        <Card
+          onClick={() => setDrawerOpen(true)}
+          interactive={true}
+          className={[Classes.CALLOUT, intent].join(' ')}
+        >
+          <H5>{title}</H5>
+          <Text>{warning.description.length > 55 ? warning.description.slice(0, 53) + '…' : warning.description}</Text>
+        </Card>
+        <Drawer
+          title={title}
+          usePortal={true}
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)} isCloseButtonShown={true}
+        >
+          <div className={Classes.DRAWER_BODY}>
+            <div className={Classes.DIALOG_BODY}>
+              {warning.description}
+            </div>
+          </div>
+        </Drawer>
+      </>
+    }
+    )}
+  </>
+}
+
 function renderTemperature(temp: number, humidex: number | null, windChill: number | null) {
   const modifiedTemp = humidex || windChill;
   const actual = `${temp.toFixed(0)}\u00b0C`
@@ -106,11 +154,8 @@ function renderHourlyForecast(forecast: HourlyForecast) {
     <td className='time-title'>
       <H6 className={warningClass(forecast)}>{to24hTime(time)}</H6>
     </td>
-    <td className='temperature'>{`${(forecast.humidex || forecast.windChill || forecast.temperature).toFixed(0)}\u00b0C`}
-      {(forecast.humidex || forecast.windChill)
-        ? <span className='temperature'>{`${forecast.temperature.toFixed(0)}\u00b0C`}</span>
-        : <></>
-      }
+    <td className='temperature'>
+      {renderTemperature(forecast.temperature, forecast.humidex, forecast.windChill)}
     </td>
     <td><i className={'wi-fw ' + (forecast.icon || 'wi wi-na')} /></td>
     <td>{forecast.pop > 0 ? forecast.pop.toLocaleString(undefined, { style: 'percent' }) : ''}</td>

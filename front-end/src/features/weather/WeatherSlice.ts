@@ -25,11 +25,19 @@ export interface Forecast extends ConditionReport {
   fullReport: string
 }
 
+export type WarningPriority = 'urgent' | 'high' | 'medium' | 'low'
+export interface Warning {
+  type: string;
+  description: string;
+  priority: WarningPriority
+}
+
 export interface WeatherReport {
   time: number;
   current: CurrentConditions;
-  forecasts: Forecast[]
-  hourlyForecasts: HourlyForecast[]
+  forecasts: Forecast[];
+  hourlyForecasts: HourlyForecast[];
+  warnings: Warning[]
 }
 
 export interface WeatherState {
@@ -166,6 +174,31 @@ function parseHourlyForecastGroup(forecasts: Element): HourlyForecast[] {
   });
 }
 
+function parsePriority(priority: string): WarningPriority {
+  switch (priority) {
+    case 'low':
+      return 'low'
+    case 'medium':
+      return 'medium'
+    case 'high':
+      return 'high'
+    case 'urgent':
+      return 'urgent'
+    default:
+      return 'medium'
+  }
+}
+
+function parseWarnings(warningSection: Element): Warning[] {
+  return Array.from(warningSection.getElementsByTagName('event')).map(x => {
+    return {
+      description: parseAttribute(x, 'description'),
+      type: parseAttribute(x, 'type'),
+      priority: parsePriority(parseAttribute(x, 'priority'))
+    }
+  });
+}
+
 function parseWeather(xml: Document): WeatherReport {
   const reportTimeNodes = xml.evaluate(
     "/siteData/dateTime[@name='xmlCreation' and @zone='UTC']",
@@ -179,7 +212,8 @@ function parseWeather(xml: Document): WeatherReport {
     time: parseDate(reportTimeNodes.singleNodeValue).toSeconds(),
     current: parseCurrentConditions(xml.getElementsByTagName('currentConditions')[0]),
     forecasts: parseForecastGroup(xml.getElementsByTagName('forecastGroup')[0]),
-    hourlyForecasts: parseHourlyForecastGroup(xml.getElementsByTagName('hourlyForecastGroup')[0])
+    hourlyForecasts: parseHourlyForecastGroup(xml.getElementsByTagName('hourlyForecastGroup')[0]),
+    warnings: parseWarnings(xml.getElementsByTagName('warnings')[0])
   }
 }
 
