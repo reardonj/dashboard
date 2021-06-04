@@ -4,7 +4,7 @@ import { DateTime, FixedOffsetZone } from "luxon";
 import React, { useState } from "react";
 import { getSunrise, getSunset } from "sunrise-sunset-js";
 import { useAppSelector } from "../../model/Hooks";
-import { Forecast, HourlyForecast } from "./WeatherSlice";
+import { ConditionReport, Forecast, HourlyForecast } from "./WeatherSlice";
 
 export function CurrentConditionsReport() {
   const conditions = useAppSelector(state => state.forecast.data?.current);
@@ -41,6 +41,7 @@ export function DailyForecasts() {
   const elements = forecasts?.map(renderForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
   return <Card>
     <H5>Forecast</H5>
+    {forecasts ? renderTemperatureSpark(forecasts) : <></>}
     {elements}
   </Card>
 }
@@ -49,6 +50,7 @@ export function HourlyForecasts() {
   const forecasts = useAppSelector(state => state.forecast.data?.hourlyForecasts);
   return <Card>
     <H5>Hourly Forecast</H5>
+    {forecasts ? renderTemperatureSpark(forecasts) : <></>}
     <div className='hourly-forecasts'>
       {forecasts
         ? <table cellSpacing={0}>
@@ -194,3 +196,41 @@ function warningClass(forecast: HourlyForecast) {
 
   return ''
 }
+function renderTemperatureSpark(forecasts: ConditionReport[]) {
+  const temps = forecasts.map(x => x.humidex || x.windChill || x.temperature);
+  const min = Math.min(...temps);
+  const max = Math.max(...temps);
+  const range = max - min;
+  const normalized = temps.map(x => (1 - (x - min) / range));
+
+  const spacing = 1 / (normalized.length - 1);
+  const path = normalized.reduce((text, val, idx) =>
+    idx === 0
+      ? `M 0 ${val} `
+      //   : text + `L ${idx * spacing} ${val}`, '')
+      : text + `C ${(idx - 0.5) * spacing} ${normalized[idx - 1]}, ${(idx - 0.5) * spacing} ${val}, ${idx * spacing} ${val}\n `, "")
+  return <svg className="temperature-spark" viewBox="0 -0.1 1 1.2" preserveAspectRatio="none">
+    <path strokeWidth='1px'
+      stroke="#f99"
+      vectorEffect="non-scaling-stroke"
+      fill="transparent"
+      d={`M 0 ${(1 - (30 - min) / range)} h 1`} />
+    <path strokeWidth='1px'
+      stroke="#999"
+      vectorEffect="non-scaling-stroke"
+      fill="transparent"
+      d={`M 0 ${(1 - (0 - min) / range)} h 1`} />
+    <path strokeWidth='1px'
+      stroke="#99f"
+      vector-effect="non-scaling-stroke"
+      fill="transparent"
+      d={`M 0 ${(1 - (-20 - min) / range)} h 1`} />
+    <path
+      strokeWidth='1px'
+      stroke="#999"
+      vectorEffect="non-scaling-stroke"
+      fill="transparent"
+      d={path} />
+  </svg>
+}
+
