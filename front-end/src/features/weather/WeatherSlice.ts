@@ -29,7 +29,7 @@ export type WarningPriority = 'urgent' | 'high' | 'medium' | 'low'
 export interface Warning {
   type: string;
   description: string;
-  priority: WarningPriority
+  priority: WarningPriority;
 }
 
 export interface WeatherReport {
@@ -37,7 +37,7 @@ export interface WeatherReport {
   current: CurrentConditions;
   forecasts: Forecast[];
   hourlyForecasts: HourlyForecast[];
-  warnings: Warning[]
+  warnings: { url: string, items: Warning[] }
 }
 
 export interface WeatherState {
@@ -189,14 +189,17 @@ function parsePriority(priority: string): WarningPriority {
   }
 }
 
-function parseWarnings(warningSection: Element): Warning[] {
-  return Array.from(warningSection.getElementsByTagName('event')).map(x => {
-    return {
-      description: parseAttribute(x, 'description'),
-      type: parseAttribute(x, 'type'),
-      priority: parsePriority(parseAttribute(x, 'priority'))
-    }
-  });
+function parseWarnings(warningSection: Element) {
+  return {
+    url: warningSection.getAttribute("url") ?? "",
+    items: Array.from(warningSection.getElementsByTagName('event')).map(x => {
+      return {
+        description: parseAttribute(x, 'description'),
+        type: parseAttribute(x, 'type'),
+        priority: parsePriority(parseAttribute(x, 'priority'))
+      }
+    })
+  }
 }
 
 function parseWeather(xml: Document): WeatherReport {
