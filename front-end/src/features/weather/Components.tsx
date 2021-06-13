@@ -21,6 +21,11 @@ export function CurrentConditionsReport() {
             </span>
           </H5>
           <div className='overflow-container'><Text ellipsize={true}>{conditions?.conditions}</Text></div>
+          {
+            conditions?.relativeHumidity
+              ? <div className='overflow-container'><Text ellipsize={true}>{conditions?.relativeHumidity}% Relative Humidity</Text></div>
+              : <></>
+          }
         </div>
         {conditions
           ? <>

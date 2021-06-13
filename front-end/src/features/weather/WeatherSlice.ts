@@ -12,6 +12,7 @@ export interface ConditionReport {
 }
 
 export interface CurrentConditions extends ConditionReport {
+  relativeHumidity: number | null;
   time: number;
 }
 
@@ -37,7 +38,7 @@ export interface WeatherReport {
   current: CurrentConditions;
   forecasts: Forecast[];
   hourlyForecasts: HourlyForecast[];
-  warnings: { url: string, items: Warning[] }
+  warnings: { url: string, items: Warning[] } | undefined
 }
 
 export interface WeatherState {
@@ -150,7 +151,8 @@ function parseCurrentConditions(current: Element): CurrentConditions {
     temperature: parseNumberElement(getChild(current, 'temperature')),
     icon: conditionForId(parseNumberElement(getChild(current, 'iconCode'))),
     windChill: parseNumberElement(getChild(current, 'windChill', true), true),
-    humidex: parseNumberElement(getChild(current, 'humidex', true), true)
+    humidex: parseNumberElement(getChild(current, 'humidex', true), true),
+    relativeHumidity: parseNumberElement(getChild(current, 'relativeHumidity', true), true)
   };
 }
 
@@ -190,8 +192,13 @@ function parsePriority(priority: string): WarningPriority {
 }
 
 function parseWarnings(warningSection: Element) {
+  const url = warningSection.getAttribute("url");
+  if (url === null) {
+    return undefined;
+  }
+
   return {
-    url: warningSection.getAttribute("url") ?? "",
+    url: url ?? "",
     items: Array.from(warningSection.getElementsByTagName('event')).map(x => {
       return {
         description: parseAttribute(x, 'description'),
