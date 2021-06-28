@@ -135,7 +135,7 @@ function parseForecast(forecast: Element) {
     conditions: parseStringElement(getChild(abbreviated, 'textSummary')),
     temperature: parseNumberElement(getChild(forecast, ['temperatures', 'temperature'])),
     windChill: null,
-    humidex: null
+    humidex: parseNumberElement(getChild(forecast, ['humidex', 'calculated'], true), true)
   }
 }
 
