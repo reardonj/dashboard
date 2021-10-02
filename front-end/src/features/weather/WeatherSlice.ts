@@ -11,6 +11,12 @@ export interface ConditionReport {
   humidex: number | null;
 }
 
+export interface Accumulation {
+  type: string;
+  amount: number;
+  units: string;
+}
+
 export interface CurrentConditions extends ConditionReport {
   relativeHumidity: number | null;
   time: number;
@@ -23,7 +29,8 @@ export interface HourlyForecast extends ConditionReport {
 
 export interface Forecast extends ConditionReport {
   title: string;
-  fullReport: string
+  fullReport: string;
+  precipitation: Accumulation[]
 }
 
 export type WarningPriority = 'urgent' | 'high' | 'medium' | 'low'
@@ -42,7 +49,7 @@ export interface WeatherReport {
 }
 
 export interface WeatherState {
-  state: "fetching" | "fetched" | { error: string };
+  state: 'fetching' | 'fetched' | { error: string };
   data: WeatherReport | null;
 }
 
@@ -52,7 +59,7 @@ class ParseError extends Error {
   }
 }
 
-const initialState: WeatherState = { state: "fetched", data: null };
+const initialState: WeatherState = { state: 'fetched', data: null };
 
 function getChild(element: Element, child: string | string[]): Element;
 function getChild(element: Element, child: string | string[], optional?: boolean): Element | null;
@@ -135,14 +142,29 @@ function parseForecast(forecast: Element) {
     conditions: parseStringElement(getChild(abbreviated, 'textSummary')),
     temperature: parseNumberElement(getChild(forecast, ['temperatures', 'temperature'])),
     windChill: null,
-    humidex: parseNumberElement(getChild(forecast, ['humidex', 'calculated'], true), true)
+    humidex: parseNumberElement(getChild(forecast, ['humidex', 'calculated'], true), true),
+    precipitation: parsePrecipitation(getChild(forecast, 'precipitation', true))
   }
+}
+
+function parsePrecipitation(precipitationSection: Element | null): Accumulation[] {
+  if (!precipitationSection) {
+    return [];
+  }
+  return Array.from(precipitationSection.getElementsByTagName('accumulation')).map(acc => {
+    var amountElement = getChild(acc, 'amount');
+    return {
+      type: getChild(acc, 'name').textContent || 'unknown precipitation',
+      amount: parseNumberElement(amountElement),
+      units: parseAttribute(amountElement, 'units')
+    }
+  });
 }
 
 function parseCurrentConditions(current: Element): CurrentConditions {
   var dateElement = Array.from(current.getElementsByTagName('dateTime')).find(x => x.getAttribute('zone') === 'UTC');
   if (!dateElement) {
-    throw new ParseError("currentConditions missing UTC dateTime");
+    throw new ParseError('currentConditions missing UTC dateTime');
   }
 
   return {
@@ -192,13 +214,13 @@ function parsePriority(priority: string): WarningPriority {
 }
 
 function parseWarnings(warningSection: Element) {
-  const url = warningSection.getAttribute("url");
+  const url = warningSection.getAttribute('url');
   if (url === null) {
     return undefined;
   }
 
   return {
-    url: url ?? "",
+    url: url ?? '',
     items: Array.from(warningSection.getElementsByTagName('event')).map(x => {
       return {
         description: parseAttribute(x, 'description'),
@@ -211,12 +233,12 @@ function parseWarnings(warningSection: Element) {
 
 function parseWeather(xml: Document): WeatherReport {
   const reportTimeNodes = xml.evaluate(
-    "/siteData/dateTime[@name='xmlCreation' and @zone='UTC']",
+    '/siteData/dateTime[@name="xmlCreation" and @zone="UTC"]',
     xml,
     undefined,
     XPathResult.FIRST_ORDERED_NODE_TYPE);
   if (!(reportTimeNodes.singleNodeValue instanceof Element)) {
-    throw new ParseError("Missing creation time");
+    throw new ParseError('Missing creation time');
   }
   return {
     time: parseDate(reportTimeNodes.singleNodeValue).toSeconds(),
@@ -233,7 +255,7 @@ export const fetchWeather = createAsyncThunk('weather/fetchWeather', async () =>
     process.env.NODE_ENV === 'production'
       ? 'https://dashboard-proxy.jmreardon.com/api/weather/citypage_weather/xml/ON/s0000430_e.xml'
       : '/api/weather/citypage_weather/xml/ON/s0000430_e.xml');
-  const xml = new DOMParser().parseFromString(response.data, "text/xml");
+  const xml = new DOMParser().parseFromString(response.data, 'text/xml');
   try {
     return parseWeather(xml);
   }
@@ -260,20 +282,20 @@ const weatherSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchWeather.pending, (state, action) => {
-        state.state = "fetching";
+        state.state = 'fetching';
       })
       .addCase(fetchWeather.fulfilled, (state, action) => {
-        state.state = "fetched";
+        state.state = 'fetched';
 
-        if (typeof (action.payload) === "string") {
+        if (typeof (action.payload) === 'string') {
           state.state = { error: action.payload };
         } else {
-          state.state = "fetched";
+          state.state = 'fetched';
           state.data = action.payload;
         }
       })
       .addCase(fetchWeather.rejected, (state, action) => {
-        state.state = { error: action.error.message || "Unexpected error" };
+        state.state = { error: action.error.message || 'Unexpected error' };
       })
   }
 })

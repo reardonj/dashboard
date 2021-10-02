@@ -4,7 +4,7 @@ import { DateTime, FixedOffsetZone } from "luxon";
 import React from "react";
 import { getSunrise, getSunset } from "sunrise-sunset-js";
 import { useAppSelector } from "../../model/Hooks";
-import { ConditionReport, Forecast, HourlyForecast } from "./WeatherSlice";
+import { Accumulation, ConditionReport, Forecast, HourlyForecast } from "./WeatherSlice";
 
 export function CurrentConditionsReport() {
   const conditions = useAppSelector(state => state.forecast.data?.current);
@@ -14,7 +14,7 @@ export function CurrentConditionsReport() {
       <div className="report-line">
         <div>
           <H5>Current Weather
-          <span className={[Classes.TEXT_MUTED, Classes.TEXT_SMALL, Classes.UI_TEXT].join(' ')}>
+            <span className={[Classes.TEXT_MUTED, Classes.TEXT_SMALL, Classes.UI_TEXT].join(' ')}>
               {conditions
                 ? <> as of {DateTime.fromSeconds(conditions.time).toLocal().toLocaleString(DateTime.TIME_24_SIMPLE)}</>
                 : <> unavailable</>}
@@ -119,7 +119,7 @@ function renderForecast(forecast: Forecast) {
     key={forecast.title}>
     <div>
       <H6>{forecast.title}</H6>
-      <Tooltip2 content={forecast.fullReport} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
+      <Tooltip2 content={generateTooltipReport(forecast)} position='top' className={ToolTipClasses.TOOLTIP2_INDICATOR}>
         {forecast.conditions.length > 35 ? forecast.conditions.slice(0, 33) + '…' : forecast.conditions}
       </Tooltip2>
     </div>
@@ -215,5 +215,16 @@ function renderTemperatureSpark(forecasts: ConditionReport[]) {
       fill="transparent"
       d={path} />
   </svg>
+}
+
+function generateTooltipReport(forecast: Forecast): string {
+  return forecast.fullReport + precipitationReport(forecast.precipitation)
+}
+
+function precipitationReport(precipitation: Accumulation[]) {
+  if (precipitation.length === 1) {
+    return ` ${precipitation[0].amount}${precipitation[0].units}.`
+  }
+  return precipitation.map(x => ` ${x.amount}${x.units} of ${x.type}.`).join('');
 }
 
