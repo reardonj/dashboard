@@ -2,12 +2,14 @@ import { Card, Classes, H5, H6, Text } from "@blueprintjs/core";
 import { Tooltip2, Classes as ToolTipClasses } from "@blueprintjs/popover2";
 import { DateTime, FixedOffsetZone } from "luxon";
 import React from "react";
+import { map } from "rxjs";
 import { getSunrise, getSunset } from "sunrise-sunset-js";
-import { useAppSelector } from "../../model/Hooks";
+import { AppStateProps } from "../../model/AppState";
+import { useSubscription } from "../../model/Hooks";
 import { Accumulation, ConditionReport, Forecast, HourlyForecast } from "./WeatherSlice";
 
-export function CurrentConditionsReport() {
-  const conditions = useAppSelector(state => state.forecast.data?.current);
+export function CurrentConditionsReport({ appState }: AppStateProps) {
+  const conditions = useSubscription(null, () => appState.weatherReport.pipe(map(x => x?.current)));
 
   return (
     <Card>
@@ -41,8 +43,8 @@ export function CurrentConditionsReport() {
   )
 }
 
-export function DailyForecasts() {
-  const forecasts = useAppSelector(state => state.forecast.data?.forecasts);
+export function DailyForecasts({ appState }: AppStateProps) {
+  const forecasts = useSubscription(null, () => appState.weatherReport.pipe(map(x => x?.forecasts)))
   const elements = forecasts?.map(renderForecast) ?? <div className={Classes.TEXT_MUTED}>unavailable</div>;
   return <Card>
     <H5>Forecast</H5>
@@ -51,8 +53,8 @@ export function DailyForecasts() {
   </Card>
 }
 
-export function HourlyForecasts() {
-  const forecasts = useAppSelector(state => state.forecast.data?.hourlyForecasts);
+export function HourlyForecasts({ appState }: AppStateProps) {
+  const forecasts = useSubscription(null, () => appState.weatherReport.pipe(map(x => x?.hourlyForecasts)))
   return <Card>
     <H5>Hourly Forecast</H5>
     {forecasts ? renderTemperatureSpark(forecasts) : <></>}
@@ -69,8 +71,8 @@ export function HourlyForecasts() {
   </Card>
 }
 
-export function Warnings() {
-  const warnings = useAppSelector(state => state.forecast.data?.warnings);
+export function Warnings({ appState }: AppStateProps) {
+  const warnings = useSubscription(undefined, () => appState.weatherReport.pipe(map(x => x?.warnings)))
   if (warnings === undefined) {
     return <></>
   }

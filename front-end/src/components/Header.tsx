@@ -1,81 +1,80 @@
 import { Alignment, Button, Icon, Navbar } from "@blueprintjs/core";
 import { DateTime } from "luxon";
-import React, { useEffect, useState } from "react";
-import { fetchWeather } from "../features/weather/WeatherSlice";
-import { useAppDispatch, useAppSelector } from "../model/Hooks";
+import { useEffect } from "react";
+import { BehaviorSubject, combineLatest, concat, concatMap, delay, from, map, share, shareReplay } from "rxjs";
+import { AppStateProps } from "../model/AppState";
+import { useSubscription } from "../model/Hooks";
 import { AppToasts } from "./AppToasts";
 
-export function Header() {
+export function Header({ appState }: AppStateProps) {
   return (
     <Navbar>
       <Navbar.Group align={Alignment.LEFT}>
         <Navbar.Heading>JR's Dashboard</Navbar.Heading>
       </Navbar.Group>
       <Navbar.Group align={Alignment.RIGHT}>
-        <LoadingIndicator />
-        <LoadingButton />
+        <LastUpdate appState={appState} />
+        <LoadingButton appState={appState} />
       </Navbar.Group>
     </Navbar>
   )
 }
 
-function updateRelativeTime(update: (a: string) => void, time: number | undefined) {
-  return update(time ? 'As of ' + DateTime.fromSeconds(time).toRelative() : '');
+function updateRelativeTime(time: number | undefined): string {
+  return time ? 'As of ' + DateTime.fromSeconds(time).toRelative() : '';
 }
 
-function LoadingIndicator() {
-  const dispatcher = useAppDispatch();
-  const forecastTime = useAppSelector(state => state.forecast.data?.time);
-  const [relativeUpdateTime, setRelativeUpdateTime] = useState('');
-  const [lastUpdate, setLastUpdate] = useState(DateTime.now().toUTC());
-
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateRelativeTime(setRelativeUpdateTime, forecastTime);
-
-      if (lastUpdate.diffNow('minutes').minutes < -15) {
-        setLastUpdate(DateTime.now().toUTC());
-        dispatcher(fetchWeather());
-      }
-
-    }, 1000);
-    return () => clearInterval(interval);
+function LastUpdate({ appState }: AppStateProps) {
+  const lastUpdateText = useSubscription('', () => {
+    const weatherReportTime = appState.weatherReport.pipe(map(report => report?.time), shareReplay(1));
+    const updateTrigger = new BehaviorSubject(0);
+    const periodicUpdate = combineLatest([updateTrigger, weatherReportTime])
+      .pipe(concatMap(([_, time]) => lastUpdateDelay(time)), share());
+    periodicUpdate.subscribe(updateTrigger);
+    //const periodicUpdate = weatherReportTime.pipe(concatMap(time => lastUpdateDelay(time)), repeat())
+    //const periodicUpdate = from(timeToTimeout(undefined)).pipe(repeat());
+    return combineLatest([concat(from([0]), periodicUpdate), weatherReportTime])
+      .pipe(map(([_, forecastTime]) => updateRelativeTime(forecastTime)))
   });
 
-  useEffect(() => {
-    updateRelativeTime(setRelativeUpdateTime, forecastTime);
-  }, [setRelativeUpdateTime, forecastTime])
-
-  return <div>{relativeUpdateTime}</div>
+  return <div>{lastUpdateText}</div>
 }
 
 
-function LoadingButton() {
-  const dispatcher = useAppDispatch();
-  const forecastState = useAppSelector(state => state.forecast.state);
+function LoadingButton({ appState }: AppStateProps) {
+  const isFetching = useSubscription(false, () => appState.loading);
+  const loadingError = useSubscription(false, () => appState.loadingError);
 
   useEffect(() => {
-    if (typeof (forecastState) === 'object') {
+    if (loadingError) {
       const message = <div>
         <b>Failed to Load Forecast</b><br />
-        {forecastState.error}
+        {loadingError.error}
       </div >
       AppToasts.show({ message, icon: 'error', intent: 'warning', })
     }
-  }, [forecastState])
+  }, [loadingError])
 
-  let indicator;
-  if (typeof (forecastState) === 'string') {
-    indicator = <Icon icon='refresh' />;
-  } else {
-    indicator = <Icon icon='outdated' />;
-  }
   return <Button
-    loading={forecastState === 'fetching'}
-    onClick={() => dispatcher(fetchWeather())}
-    intent={typeof (forecastState) === 'string' ? 'success' : 'warning'}
+    loading={isFetching}
+    onClick={() => appState.loadTrigger.next()}
+    intent={loadingError ? 'warning' : 'success'}
   >
-    {indicator}
+    <Icon icon={loadingError ? 'outdated' : 'refresh'} />
   </Button>
+}
+
+function lastUpdateDelay(time: number | undefined) {
+  if (time) {
+    let delayTime;
+    const timeDiff = DateTime.fromSeconds(time).diffNow('minutes').minutes
+    if (timeDiff > -1) {
+      delayTime = 1000;
+    } else {
+      delayTime = 1000 * 60;
+    }
+    return from([0]).pipe(delay(delayTime))
+  }
+
+  return from([0]).pipe(delay(1000))
 }

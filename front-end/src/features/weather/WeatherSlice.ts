@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { catchError, from, map, Observable, of } from 'rxjs';
 import axios from 'axios';
 import { DateTime, FixedOffsetZone } from 'luxon';
 import { conditionForId } from './IconMappings';
@@ -58,8 +58,6 @@ class ParseError extends Error {
     super(message);
   }
 }
-
-const initialState: WeatherState = { state: 'fetched', data: null };
 
 function getChild(element: Element, child: string | string[]): Element;
 function getChild(element: Element, child: string | string[], optional?: boolean): Element | null;
@@ -249,57 +247,21 @@ function parseWeather(xml: Document): WeatherReport {
   }
 }
 
-// Thunk functions
-export const fetchWeather = createAsyncThunk('weather/fetchWeather', async () => {
-  const response = await axios(
+export function loadWeather(): Observable<WeatherReport | string> {
+  return from(axios(
     process.env.NODE_ENV === 'production'
       ? 'https://dashboard-proxy.jmreardon.com/api/weather/citypage_weather/xml/ON/s0000430_e.xml'
-      : '/api/weather/citypage_weather/xml/ON/s0000430_e.xml');
-  const xml = new DOMParser().parseFromString(response.data, 'text/xml');
-  try {
-    return parseWeather(xml);
+      : '/api/weather/citypage_weather/xml/ON/s0000430_e.xml'))
+    .pipe(
+      map(response => parseWeather(new DOMParser().parseFromString(response.data, 'text/xml'))),
+      catchError((err, caught) => of(handleParseErrors(err)))
+    )
+}
+
+function handleParseErrors(err: any) {
+  if (err instanceof ParseError) {
+    return err.message;
   }
-  catch (e) {
-    if (e instanceof ParseError) {
-      return e.message;
-    }
 
-    throw (e);
-  }
-});
-
-const weatherSlice = createSlice({
-  name: 'weather',
-  initialState,
-  reducers: {
-    loadWeather(state, action) {
-      return {
-        ...state,
-        isFetching: true
-      }
-    }
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchWeather.pending, (state, action) => {
-        state.state = 'fetching';
-      })
-      .addCase(fetchWeather.fulfilled, (state, action) => {
-        state.state = 'fetched';
-
-        if (typeof (action.payload) === 'string') {
-          state.state = { error: action.payload };
-        } else {
-          state.state = 'fetched';
-          state.data = action.payload;
-        }
-      })
-      .addCase(fetchWeather.rejected, (state, action) => {
-        state.state = { error: action.error.message || 'Unexpected error' };
-      })
-  }
-})
-
-export const { loadWeather } = weatherSlice.actions
-
-export default weatherSlice
+  return "unexpected error: " + err;
+}
