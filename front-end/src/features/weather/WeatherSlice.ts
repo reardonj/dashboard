@@ -248,10 +248,7 @@ function parseWeather(xml: Document): WeatherReport {
 }
 
 export function loadWeather(): Observable<WeatherReport | string> {
-  return from(axios(
-    process.env.NODE_ENV === 'production'
-      ? 'https://dashboard-proxy.jmreardon.com/api/weather/citypage_weather/xml/ON/s0000430_e.xml'
-      : '/api/weather/citypage_weather/xml/ON/s0000430_e.xml'))
+  return from(axios('/api/weather/citypage_weather/xml/ON/s0000430_e.xml'))
     .pipe(
       map(response => parseWeather(new DOMParser().parseFromString(response.data, 'text/xml'))),
       catchError((err, caught) => of(handleParseErrors(err)))

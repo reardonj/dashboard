@@ -10,4 +10,5 @@ var corsOptions: CorsOptions = {
 
 //app.use(function (req, res, next) { setTimeout(next, 1000) });
 app.use('/api/weather/', cors(corsOptions), proxy('https://dd.weather.gc.ca/'));
+app.use(express.static('public'))
 app.listen(process.env.PORT || 8080);
