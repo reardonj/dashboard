@@ -62,7 +62,7 @@ table {
     flex-direction: column;
     align-items: stretch;
     max-height: 800px;
-    justify-content: center;
+    justify-content: flex-start;
     align-content: center;
   }
 
@@ -70,7 +70,7 @@ table {
     max-width: 400px;
     min-width: 350px;
     margin: 4px 4px 4px 4px;
-    flex: 1 1;
+    flex: 0 1;
 
   }
 }
