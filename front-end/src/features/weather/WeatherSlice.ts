@@ -86,6 +86,15 @@ function getChild(element: Element, child: string | string[], optional?: boolean
   }
 }
 
+function getChildren(element: Element | null, child: string | string[]): Element[] {
+  if (!element) { return []; }
+  if (typeof (child) === 'string') { return Array.from(element.getElementsByTagName(child)); }
+  if (child.length === 1) { return Array.from(element.getElementsByTagName(child[0])); }
+  if (child.length === 0) { return [] }
+
+  return getChildren(getChild(element, child[0], true), child.slice(1));
+}
+
 function parseAttribute(element: Element, attribute: string) {
   const text = element.getAttribute(attribute);
   if (!text) {
@@ -133,13 +142,16 @@ function parseDate(dateTime: Element): DateTime {
 
 function parseForecast(forecast: Element) {
   const abbreviated = getChild(forecast, 'abbreviatedForecast');
+  const tempElem = getChild(forecast, ['temperatures', 'temperature'])
+  const temperature = parseNumberElement(tempElem)
+  const windChill = getChildren(forecast, ['windChill', 'calculated'])
   return {
     title: parseAttribute(getChild(forecast, 'period'), 'textForecastName'),
     icon: conditionForId(parseNumberElement(getChild(abbreviated, 'iconCode'))),
     fullReport: parseStringElement(getChild(forecast, 'textSummary')),
     conditions: parseStringElement(getChild(abbreviated, 'textSummary')),
-    temperature: parseNumberElement(getChild(forecast, ['temperatures', 'temperature'])),
-    windChill: null,
+    temperature: temperature,
+    windChill: windChillFor(tempElem, windChill),
     humidex: parseNumberElement(getChild(forecast, ['humidex', 'calculated'], true), true),
     precipitation: parsePrecipitation(getChild(forecast, 'precipitation', true))
   }
@@ -149,7 +161,7 @@ function parsePrecipitation(precipitationSection: Element | null): Accumulation[
   if (!precipitationSection) {
     return [];
   }
-  return Array.from(precipitationSection.getElementsByTagName('accumulation')).map(acc => {
+  return getChildren(precipitationSection, 'accumulation').map(acc => {
     var amountElement = getChild(acc, 'amount');
     return {
       type: getChild(acc, 'name').textContent || 'unknown precipitation',
@@ -160,7 +172,7 @@ function parsePrecipitation(precipitationSection: Element | null): Accumulation[
 }
 
 function parseCurrentConditions(current: Element): CurrentConditions {
-  var dateElement = Array.from(current.getElementsByTagName('dateTime')).find(x => x.getAttribute('zone') === 'UTC');
+  var dateElement = getChildren(current, 'dateTime').find(x => x.getAttribute('zone') === 'UTC');
   if (!dateElement) {
     throw new ParseError('currentConditions missing UTC dateTime');
   }
@@ -177,11 +189,11 @@ function parseCurrentConditions(current: Element): CurrentConditions {
 }
 
 function parseForecastGroup(forecasts: Element): Forecast[] {
-  return Array.from(forecasts.getElementsByTagName('forecast')).map(parseForecast);
+  return getChildren(forecasts, 'forecast').map(parseForecast);
 }
 
 function parseHourlyForecastGroup(forecasts: Element): HourlyForecast[] {
-  return Array.from(forecasts.getElementsByTagName('hourlyForecast')).map(current => {
+  return getChildren(forecasts, 'hourlyForecast').map(current => {
     const dateString = parseAttribute(current, 'dateTimeUTC');
     const date = DateTime.fromFormat(dateString, 'yyyyMMddHHmm', { zone: FixedOffsetZone.utcInstance });
     return {
@@ -219,7 +231,7 @@ function parseWarnings(warningSection: Element) {
 
   return {
     url: url ?? '',
-    items: Array.from(warningSection.getElementsByTagName('event')).map(x => {
+    items: getChildren(warningSection, 'event').map(x => {
       return {
         description: parseAttribute(x, 'description'),
         type: parseAttribute(x, 'type'),
@@ -262,3 +274,13 @@ function handleParseErrors(err: any) {
 
   return "unexpected error: " + err;
 }
+function windChillFor(tempElem: Element, windChill: Element[]): number | null {
+  const tempIsHigh = tempElem.getAttribute('class') === 'high';
+  const temps = windChill.map(w => parseNumberElement(w)).sort();
+  if (tempIsHigh) {
+    return temps.shift() ?? null;
+  } else {
+    return temps.pop() ?? null;
+  }
+}
+
